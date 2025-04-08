@@ -1,20 +1,32 @@
-PROJECT(sqlite3)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.8)
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
-add_library(sqlite3 STATIC src/sqlite3.c src/sqlite3.h src/sqlite3ext.h)
-add_executable(sqlite src/sqlite3.c src/shell.c src/sqlite3.h src/sqlite3ext.h)
-#set_target_properties(sqlite PROPERTIES OUTPUT_NAME sqlite3)
+PROJECT(sqlite3 LANGUAGES C)
 
-add_definitions(-DSQLITE_ENABLE_RTREE)
-add_definitions(-DSQLITE_ENABLE_FTS4)
-add_definitions(-DSQLITE_ENABLE_FTS5)
-add_definitions(-DSQLITE_ENABLE_JSON1)
-add_definitions(-DSQLITE_ENABLE_RBU)
-add_definitions(-DSQLITE_ENABLE_STAT4)
+add_library(sqlite3
+  src/sqlite3.c
+  src/sqlite3.h
+  src/sqlite3ext.h
+)
+
+target_include_directories(sqlite3 PUBLIC src/)
+
+target_compile_definitions(sqlite3
+  PRIVATE -DSQLITE_ENABLE_RTREE
+  PRIVATE -DSQLITE_ENABLE_FTS4
+  PRIVATE -DSQLITE_ENABLE_FTS5
+  PRIVATE -DSQLITE_ENABLE_JSON1
+  PRIVATE -DSQLITE_ENABLE_RBU
+  PRIVATE -DSQLITE_ENABLE_STAT4
+)
 
 # Uncomment this for single-threaded variant (faster)
-#add_definitions(-DSQLITE_THREADSAFE=0)
+#target_compile_definitions(sqlite3 PRIVATE -DSQLITE_THREADSAFE=0) #=1 ????
+
+add_executable(sqlite src/shell.c)
+
+target_link_libraries(sqlite
+  PRIVATE sqlite3
+)
 
 if(WIN32)
   add_custom_command(TARGET sqlite POST_BUILD
@@ -24,7 +36,7 @@ if(WIN32)
   install(FILES sqlite3.exe DESTINATION bin)
 else()
   include(FindThreads)
-  target_link_libraries(sqlite m ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+  target_link_libraries(sqlite PRIVATE m ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
   install(TARGETS sqlite RUNTIME DESTINATION bin)
 endif()
 
